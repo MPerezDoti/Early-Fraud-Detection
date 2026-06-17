@@ -144,7 +144,7 @@ function dibujarRefTicks() {
   const cont = document.getElementById('refTicks');
   const refs = [DATA.umbralConservador, DATA.umbralOptimo, DATA.umbralAgresivo];
   cont.innerHTML = refs.map(u =>
-    `<div class="ref-tick" style="left:${u * 100}%"></div>`
+    `<div class="ref-tick" style="left:${(4.6 + u * 94).toFixed(3)}%"></div>`
   ).join('');
 }
 
