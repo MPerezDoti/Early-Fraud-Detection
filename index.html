@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Herramienta de Umbral — Detección de Fraude</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ════════════════════════ HEADER ════════════════════════ -->
+  <header class="hdr">
+    <div class="hdr-tag">HERRAMIENTA INTERACTIVA</div>
+    <h1 class="hdr-title">Calibrador de Umbral de Detección de Fraude</h1>
+    <p class="hdr-sub">
+      Ajusta el umbral de decisión del modelo y observa en tiempo real el efecto sobre
+      la precisión, la sensibilidad y el impacto de negocio. El umbral no es fijo —
+      es un control que su equipo puede mover según las prioridades del negocio.
+    </p>
+  </header>
+
+  <!-- ════════════════════════ PERFORMANCE STRIP ════════════════════════ -->
+  <section class="perf-strip" aria-label="Rendimiento del modelo">
+    <div class="perf-item">
+      <span class="perf-label">Rendimiento actual del modelo</span>
+    </div>
+    <div class="perf-stat">
+      <span class="perf-stat-val" id="rocAucVal">—</span>
+      <span class="perf-stat-lbl">ROC&#8209;AUC</span>
+    </div>
+    <div class="perf-divider"></div>
+    <div class="perf-stat">
+      <span class="perf-stat-val" id="prAucVal">—</span>
+      <span class="perf-stat-lbl">PR&#8209;AUC</span>
+    </div>
+    <div class="perf-divider"></div>
+    <div class="perf-stat">
+      <span class="perf-stat-val" id="modeloVal">Random Forest</span>
+      <span class="perf-stat-lbl">1,000 árboles</span>
+    </div>
+  </section>
+
+  <!-- ════════════════════════ MAIN GRID ════════════════════════ -->
+  <main class="grid">
+
+    <!-- ── LEFT: CHART + CONTROLS ── -->
+    <section class="panel chart-panel">
+
+      <div class="panel-hdr">
+        <h2>Métricas según el Umbral</h2>
+        <div class="legend">
+          <span class="legend-item"><i class="dot" style="background:var(--steel)"></i>Precisión</span>
+          <span class="legend-item"><i class="dot" style="background:var(--red)"></i>Sensibilidad</span>
+          <span class="legend-item"><i class="dot" style="background:var(--gold)"></i>F1&#8209;Score</span>
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <svg id="chartSvg" viewBox="0 0 1000 380" preserveAspectRatio="none" aria-label="Gráfico de métricas"></svg>
+      </div>
+
+      <!-- Slider track — same width as chart, handle aligns with chart's vertical line -->
+      <div class="slider-wrap">
+        <div class="slider-track-bg"></div>
+        <input type="range" id="umbralSlider" min="0" max="1" step="0.001" value="0.7" aria-label="Umbral de decisión">
+        <div class="ref-ticks" id="refTicks"></div>
+      </div>
+
+      <div class="slider-scale">
+        <span>0.0</span><span>0.2</span><span>0.4</span><span>0.6</span><span>0.8</span><span>1.0</span>
+      </div>
+
+      <!-- Controls row: exact input + quick-set buttons -->
+      <div class="controls-row">
+        <div class="exact-input">
+          <label for="umbralInput">Umbral exacto</label>
+          <input type="number" id="umbralInput" min="0" max="1" step="0.001" value="0.700">
+        </div>
+
+        <div class="quick-buttons">
+          <button class="qbtn qbtn-conservador" data-umbral="0.7" id="btnConservador">
+            <span class="qbtn-name">Conservador</span>
+            <span class="qbtn-val">0.700</span>
+          </button>
+          <button class="qbtn qbtn-optimo" data-umbral="0.361" id="btnOptimo">
+            <span class="qbtn-name">Óptimo F1</span>
+            <span class="qbtn-val">0.361</span>
+          </button>
+          <button class="qbtn qbtn-agresivo" data-umbral="0.2" id="btnAgresivo">
+            <span class="qbtn-name">Agresivo</span>
+            <span class="qbtn-val">0.200</span>
+          </button>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        El umbral puede ajustarse en incrementos de 0.001, la resolución del modelo (1,000 árboles de decisión).
+      </p>
+
+    </section>
+
+    <!-- ── RIGHT: SIDE PANEL ── -->
+    <aside class="panel side-panel">
+
+      <div class="panel-hdr">
+        <h2>Impacto Estimado</h2>
+      </div>
+
+      <div class="n-input-block">
+        <label for="nInput">Transacciones a evaluar</label>
+        <input type="number" id="nInput" min="1" step="1" value="554082">
+        <span class="n-hint" id="nHint">Tamaño real del conjunto de test</span>
+      </div>
+
+      <!-- Live precision/sensibilidad/f1 readout -->
+      <div class="metric-readout">
+        <div class="metric-cell">
+          <span class="metric-cell-val" id="precisionVal" style="color:var(--steel)">—</span>
+          <span class="metric-cell-lbl">Precisión</span>
+        </div>
+        <div class="metric-cell">
+          <span class="metric-cell-val" id="sensibilidadVal" style="color:var(--red)">—</span>
+          <span class="metric-cell-lbl">Sensibilidad</span>
+        </div>
+        <div class="metric-cell">
+          <span class="metric-cell-val" id="f1Val" style="color:var(--gold-dark)">—</span>
+          <span class="metric-cell-lbl">F1&#8209;Score</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Detection results -->
+      <div class="result-row">
+        <span class="result-label">Fraudes detectados</span>
+        <span class="result-value result-positive" id="fraudesDetectadosVal">—</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Fraudes sin detectar</span>
+        <span class="result-value result-negative" id="fraudesPerdidosVal">—</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Legítimas bloqueadas</span>
+        <span class="result-value result-negative" id="legitimasBloqueadasVal">—</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Pesos -->
+      <div class="result-row">
+        <span class="result-label">Monto recuperado</span>
+        <span class="result-value result-positive" id="montoRecuperadoVal">—</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Monto sin recuperar</span>
+        <span class="result-value result-negative" id="montoPerdidoVal">—</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Ratio callout -->
+      <div class="ratio-box" id="ratioBox">
+        <span class="ratio-text" id="ratioText">—</span>
+      </div>
+
+      <p class="scale-note" id="scaleNote"></p>
+
+    </aside>
+
+  </main>
+
+  <footer class="pg-footer">
+    Detección de Fraude en Transacciones Financieras — Proyecto Final, Postgrado en Data Analytics · Dataset: PaySim (Kaggle)
+  </footer>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
